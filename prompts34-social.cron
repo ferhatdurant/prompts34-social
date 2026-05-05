@@ -1,0 +1,3 @@
+# Run with Europe/Istanbul local time at 12:30 every day.
+CRON_TZ=Europe/Istanbul
+30 12 * * * /Users/gulaltinkalp/Prompts34/prompts34-social/scripts/run_daily_post.sh >> /Users/gulaltinkalp/Prompts34/prompts34-social/output/cron.log 2>&1
