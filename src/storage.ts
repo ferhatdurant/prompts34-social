@@ -3,15 +3,19 @@ import path from 'node:path';
 import { createClient } from '@supabase/supabase-js';
 import { settings } from './config.js';
 
-async function ensurePublicBucket(): Promise<void> {
+function createSupabaseAdminClient() {
   if (!settings.supabaseUrl || !settings.supabaseServiceRoleKey) {
     throw new Error('Missing Supabase configuration for upload');
   }
 
-  const supabase = createClient(
+  return createClient(
     settings.supabaseUrl,
     settings.supabaseServiceRoleKey,
   );
+}
+
+async function ensurePublicBucket(): Promise<void> {
+  const supabase = createSupabaseAdminClient();
   const bucketName = settings.supabaseStorageBucket;
   const existing = await supabase.storage.getBucket(bucketName);
 
@@ -53,16 +57,9 @@ export async function uploadPublicImage(
   bytes: Buffer,
   mimeType: string,
 ): Promise<string> {
-  if (!settings.supabaseUrl || !settings.supabaseServiceRoleKey) {
-    throw new Error('Missing Supabase configuration for upload');
-  }
-
   await ensurePublicBucket();
 
-  const supabase = createClient(
-    settings.supabaseUrl,
-    settings.supabaseServiceRoleKey,
-  );
+  const supabase = createSupabaseAdminClient();
 
   const extension = mimeType.split('/')[1] ?? 'png';
   const storagePath = `instagram/gunun-promptu/${dateKey}.${extension}`;
@@ -86,4 +83,44 @@ export async function uploadPublicImage(
   }
 
   return publicUrl;
+}
+
+const SCHEDULE_MARKER_DIR = 'instagram/history/daily';
+
+export async function hasScheduledPublishMarker(dateKey: string): Promise<boolean> {
+  await ensurePublicBucket();
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase.storage
+    .from(settings.supabaseStorageBucket)
+    .list(SCHEDULE_MARKER_DIR, {
+      limit: 100,
+      search: `${dateKey}.json`,
+    });
+
+  if (error) {
+    throw new Error(`Supabase marker lookup failed: ${error.message}`);
+  }
+
+  return (data ?? []).some((entry) => entry.name === `${dateKey}.json`);
+}
+
+export async function writeScheduledPublishMarker(
+  dateKey: string,
+  payload: object,
+): Promise<void> {
+  await ensurePublicBucket();
+  const supabase = createSupabaseAdminClient();
+  const markerPath = `${SCHEDULE_MARKER_DIR}/${dateKey}.json`;
+  const body = Buffer.from(JSON.stringify(payload, null, 2), 'utf8');
+
+  const result = await supabase.storage
+    .from(settings.supabaseStorageBucket)
+    .upload(markerPath, body, {
+      contentType: 'application/json',
+      upsert: true,
+    });
+
+  if (result.error) {
+    throw new Error(`Supabase marker write failed: ${result.error.message}`);
+  }
 }

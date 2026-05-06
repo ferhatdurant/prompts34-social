@@ -8,6 +8,7 @@
     "build": "tsc --noEmit",
     "generate": "tsx src/cli.ts generate",
     "publish": "tsx src/cli.ts publish",
+    "publish:scheduled": "tsx src/cli.ts publish:scheduled",
     "instagram:validate": "tsx src/cli.ts instagram:validate",
     "test": "vitest run"
   },

@@ -2,7 +2,7 @@ name: Daily Instagram Post
 
 on:
   schedule:
-    - cron: '30 9 * * *'
+    - cron: '30-50/5 9 * * *'
   workflow_dispatch:
 
 jobs:
@@ -23,13 +23,21 @@ jobs:
         run: npm ci
 
       - name: Publish scheduled Instagram post
-        run: npm run publish
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            npm run publish:scheduled
+          else
+            npm run publish
+          fi
         env:
           PROMPTS34_API_URL: https://api.prompts34.com
           PROMPTS34_WEBSITE_URL: https://prompts34.com
           INSTAGRAM_GRAPH_API_VERSION: v24.0
           INSTAGRAM_API_MODE: instagram_login
           SCHEDULE_DEDUPE_WINDOW: 14
+          SCHEDULE_TARGET_HOUR_TR: 12
+          SCHEDULE_TARGET_MINUTE_TR: 30
+          SCHEDULE_WINDOW_MINUTES: 20
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

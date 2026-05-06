@@ -18,6 +18,9 @@ const envSchema = z.object({
   INSTAGRAM_ACCESS_TOKEN: z.string().min(1).optional(),
   INSTAGRAM_IG_USER_ID: z.string().min(1).optional(),
   SCHEDULE_DEDUPE_WINDOW: z.coerce.number().int().positive().default(14),
+  SCHEDULE_TARGET_HOUR_TR: z.coerce.number().int().min(0).max(23).default(12),
+  SCHEDULE_TARGET_MINUTE_TR: z.coerce.number().int().min(0).max(59).default(30),
+  SCHEDULE_WINDOW_MINUTES: z.coerce.number().int().positive().max(120).default(20),
 });
 
 const parsed = envSchema.parse(process.env);
@@ -35,6 +38,9 @@ export const settings = {
   instagramAccessToken: parsed.INSTAGRAM_ACCESS_TOKEN,
   instagramIgUserId: parsed.INSTAGRAM_IG_USER_ID,
   scheduleDedupeWindow: parsed.SCHEDULE_DEDUPE_WINDOW,
+  scheduleTargetHourTr: parsed.SCHEDULE_TARGET_HOUR_TR,
+  scheduleTargetMinuteTr: parsed.SCHEDULE_TARGET_MINUTE_TR,
+  scheduleWindowMinutes: parsed.SCHEDULE_WINDOW_MINUTES,
   outputRoot: 'output',
 };
 
