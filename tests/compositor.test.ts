@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   composeInstagramPoster,
   fitTitleLayout,
+  normalizeDisplayTitle,
 } from '../src/compositor.js';
 
 describe('instagram compositor', () => {
@@ -25,6 +26,14 @@ describe('instagram compositor', () => {
 
     expect(layout.lines.length).toBeLessThanOrEqual(4);
     expect(layout.lines[layout.lines.length - 1]?.length).toBeGreaterThan(0);
+  });
+
+  it('removes hyphen separators from the displayed title', () => {
+    expect(
+      normalizeDisplayTitle(
+        'Yeni Özellik Uygulama Planı - Senior Backend Engineer Prompt',
+      ),
+    ).toBe('Yeni Özellik Uygulama Planı Senior Backend Engineer Prompt');
   });
 
   it('renders a full square poster without changing the output dimensions', async () => {

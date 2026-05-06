@@ -86,8 +86,12 @@ export interface TitleLayout {
   lines: string[];
 }
 
+export function normalizeDisplayTitle(title: string): string {
+  return title.replace(/\s*-\s*/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 export function fitTitleLayout(title: string): TitleLayout {
-  const normalizedTitle = title.trim().replace(/\s+/g, ' ');
+  const normalizedTitle = normalizeDisplayTitle(title);
   const words = normalizedTitle.split(' ').filter(Boolean);
 
   for (
@@ -162,11 +166,16 @@ export async function composeInstagramPoster(
           <stop offset="35%" stop-color="rgba(7,20,58,0.34)" />
           <stop offset="100%" stop-color="rgba(6,18,54,0.70)" />
         </linearGradient>
+        <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(4,12,30,0.48)" />
+          <stop offset="100%" stop-color="rgba(6,18,54,0.58)" />
+        </linearGradient>
         <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
           <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#031126" flood-opacity="0.45" />
         </filter>
       </defs>
       <rect width="${CANVAS_SIZE}" height="${CANVAS_SIZE}" fill="url(#fade)" />
+      <rect x="110" y="210" width="860" height="470" rx="42" fill="url(#panel)" />
       <text x="${TITLE_BOX_CENTER_X}" y="340" text-anchor="middle" fill="#F5F7FB" font-size="82" font-weight="800" font-family="Inter, Arial, sans-serif" filter="url(#shadow)">
         ${escapeXml(headline)}
       </text>

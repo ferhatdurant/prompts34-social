@@ -36,9 +36,11 @@ export function buildGeminiImagePrompt(title: string): string {
     'Create a polished Instagram-ready background artwork for Prompts34.',
     'The image must be portrait-oriented and optimized for an Instagram feed post.',
     'Do not include any words, letters, numbers, logos, watermarks, UI screenshots, or typographic elements in the generated image.',
-    `The theme should visually fit this prompt topic: "${title}".`,
+    'Do not render the prompt title anywhere in the image.',
+    'Do not place any header text at the top of the image.',
+    `The theme should visually fit this prompt topic in an abstract way: "${title}".`,
     'Use a clean premium editorial layout, modern AI/productivity visual language, strong contrast, and professional social-media art direction.',
-    'Leave a large clean central area for later text overlay.',
+    'Leave a large clean central area for later text overlay and keep the upper-middle area free of any visual clutter.',
     'No watermark.',
   ].join(' ');
 }
