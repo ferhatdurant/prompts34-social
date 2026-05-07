@@ -2,7 +2,6 @@ name: Daily Instagram Post
 
 on:
   schedule:
-    - cron: '18 11 * * *'
     - cron: '*/15 * * * *'
   workflow_dispatch:
 
