@@ -41,10 +41,7 @@ export function isWithinTurkeyScheduleWindow(date: Date): boolean {
   const currentMinutes = hour * 60 + minute;
   const targetMinutes =
     settings.scheduleTargetHourTr * 60 + settings.scheduleTargetMinuteTr;
-  return (
-    currentMinutes >= targetMinutes &&
-    currentMinutes < targetMinutes + settings.scheduleWindowMinutes
-  );
+  return currentMinutes >= targetMinutes;
 }
 
 export interface ScheduledPublishResult {

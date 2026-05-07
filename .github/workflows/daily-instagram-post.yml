@@ -2,7 +2,7 @@ name: Daily Instagram Post
 
 on:
   schedule:
-    - cron: '30-50/5 9 * * *'
+    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -37,7 +37,6 @@ jobs:
           SCHEDULE_DEDUPE_WINDOW: 14
           SCHEDULE_TARGET_HOUR_TR: 12
           SCHEDULE_TARGET_MINUTE_TR: 30
-          SCHEDULE_WINDOW_MINUTES: 20
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

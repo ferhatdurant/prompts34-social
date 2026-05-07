@@ -23,9 +23,9 @@ describe('scheduled publish timing', () => {
     );
   });
 
-  it('rejects times after the Turkey schedule window closes', () => {
-    expect(isWithinTurkeyScheduleWindow(new Date('2026-05-06T09:55:00Z'))).toBe(
-      false,
+  it('keeps accepting runs later in the day after 12:30 Turkey', () => {
+    expect(isWithinTurkeyScheduleWindow(new Date('2026-05-06T11:42:00Z'))).toBe(
+      true,
     );
   });
 });
