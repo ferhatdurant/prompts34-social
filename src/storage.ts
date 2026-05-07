@@ -85,14 +85,21 @@ export async function uploadPublicImage(
   return publicUrl;
 }
 
-const SCHEDULE_MARKER_DIR = 'instagram/history/daily';
+export type SchedulePlatform = 'instagram' | 'twitter';
 
-export async function hasScheduledPublishMarker(dateKey: string): Promise<boolean> {
+function markerDir(platform: SchedulePlatform): string {
+  return `${platform}/history/daily`;
+}
+
+export async function hasScheduledPublishMarker(
+  dateKey: string,
+  platform: SchedulePlatform = 'instagram',
+): Promise<boolean> {
   await ensurePublicBucket();
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase.storage
     .from(settings.supabaseStorageBucket)
-    .list(SCHEDULE_MARKER_DIR, {
+    .list(markerDir(platform), {
       limit: 100,
       search: `${dateKey}.json`,
     });
@@ -107,10 +114,11 @@ export async function hasScheduledPublishMarker(dateKey: string): Promise<boolea
 export async function writeScheduledPublishMarker(
   dateKey: string,
   payload: object,
+  platform: SchedulePlatform = 'instagram',
 ): Promise<void> {
   await ensurePublicBucket();
   const supabase = createSupabaseAdminClient();
-  const markerPath = `${SCHEDULE_MARKER_DIR}/${dateKey}.json`;
+  const markerPath = `${markerDir(platform)}/${dateKey}.json`;
   const body = Buffer.from(JSON.stringify(payload, null, 2), 'utf8');
 
   const result = await supabase.storage

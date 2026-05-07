@@ -92,3 +92,35 @@ export function buildHashtagComment(title: string, tags: string[]): string {
   const selected = unique.slice(0, 24);
   return selected.map((tag) => `#${tag}`).join(' ');
 }
+
+export const TWITTER_MAX_TWEET_LENGTH = 280;
+export const TWITTER_URL_LENGTH = 23;
+
+export function buildTwitterText(
+  title: string,
+  description: string,
+  websiteUrl: string,
+): string {
+  const headline = 'Günün Promptu';
+  const cleanedTitle = title.trim();
+  const cleanedDescription = description.trim();
+  const url = websiteUrl.replace(/\/$/, '');
+  const headerLine = `${headline}: ${cleanedTitle}`;
+  const headerLength = Array.from(headerLine).length;
+  const fixedLength = headerLength + TWITTER_URL_LENGTH + '\n\n\n\n'.length;
+  const remaining = TWITTER_MAX_TWEET_LENGTH - fixedLength;
+
+  let body = cleanedDescription;
+  if (remaining <= 0) {
+    body = '';
+  } else if (Array.from(cleanedDescription).length > remaining) {
+    const sliced = Array.from(cleanedDescription).slice(0, Math.max(0, remaining - 1));
+    body = `${sliced.join('').trimEnd()}…`;
+  }
+
+  return `${headerLine}\n\n${body}\n\n${url}`;
+}
+
+export function buildTwitterHashtagReply(title: string, tags: string[]): string {
+  return buildHashtagComment(title, tags);
+}

@@ -1,3 +1,5 @@
+import { readFile, stat } from 'node:fs/promises';
+import path from 'node:path';
 import { settings } from './config.js';
 import { composeInstagramPoster } from './compositor.js';
 import { generateInstagramImage } from './gemini.js';
@@ -17,16 +19,23 @@ import {
 import { buildPromptPermalink, fetchPublicPrompts } from './prompts34.js';
 import { chooseScheduledPrompt } from './schedule.js';
 import { uploadPublicImage, writeLocalImage } from './storage.js';
-import type { InstagramDraft } from './types.js';
+import type { DailyContent, InstagramDraft } from './types.js';
 
-function mimeTypeToExtension(mimeType: string): string {
-  if (mimeType === 'image/png') return 'png';
-  if (mimeType === 'image/jpeg') return 'jpg';
-  return 'bin';
+const POSTER_FILENAME = 'gunun-promptu.png';
+const POSTER_MIME = 'image/png';
+
+async function readExistingPosterBytes(dateKey: string): Promise<Buffer | null> {
+  const filePath = path.join(settings.outputRoot, dateKey, POSTER_FILENAME);
+  const exists = await stat(filePath)
+    .then(() => true)
+    .catch(() => false);
+  if (!exists) {
+    return null;
+  }
+  return readFile(filePath);
 }
 
-export async function runPipeline(publish: boolean): Promise<InstagramDraft> {
-  const now = new Date();
+export async function prepareDailyContent(now: Date = new Date()): Promise<DailyContent> {
   const dateKey = now.toISOString().slice(0, 10);
   const prompts = await fetchPublicPrompts();
   const recentPromptIds = await getRecentlyPublishedPromptIds(
@@ -43,22 +52,20 @@ export async function runPipeline(publish: boolean): Promise<InstagramDraft> {
   }
 
   const geminiPrompt = buildGeminiImagePrompt(selectedPrompt.title);
-  const generatedImage = await generateInstagramImage(geminiPrompt);
-  const composedImage = await composeInstagramPoster(
-    generatedImage.bytes,
-    selectedPrompt.title,
-  );
-  const extension = mimeTypeToExtension('image/png');
-  const localPath = await writeLocalImage(dateKey, composedImage, extension);
-  const publicUrl = await uploadPublicImage(
-    dateKey,
-    composedImage,
-    'image/png',
-  );
+  let composedImage = await readExistingPosterBytes(dateKey);
+  if (!composedImage) {
+    const generatedImage = await generateInstagramImage(geminiPrompt);
+    composedImage = await composeInstagramPoster(
+      generatedImage.bytes,
+      selectedPrompt.title,
+    );
+  }
 
-  const draft: InstagramDraft = {
+  const localPath = await writeLocalImage(dateKey, composedImage, 'png');
+  const publicUrl = await uploadPublicImage(dateKey, composedImage, POSTER_MIME);
+
+  return {
     date: dateKey,
-    headline: 'Günün Promptu',
     category,
     prompt: {
       id: selectedPrompt.id,
@@ -70,13 +77,31 @@ export async function runPipeline(publish: boolean): Promise<InstagramDraft> {
     image: {
       localPath,
       publicUrl,
-      mimeType: 'image/png',
+      bytes: composedImage,
+      mimeType: POSTER_MIME,
       geminiPrompt,
     },
+  };
+}
+
+export async function runPipeline(publish: boolean): Promise<InstagramDraft> {
+  const content = await prepareDailyContent(new Date());
+
+  const draft: InstagramDraft = {
+    date: content.date,
+    headline: 'Günün Promptu',
+    category: content.category,
+    prompt: content.prompt,
+    image: {
+      localPath: content.image.localPath,
+      publicUrl: content.image.publicUrl,
+      mimeType: content.image.mimeType,
+      geminiPrompt: content.image.geminiPrompt,
+    },
     instagram: {
-      caption: buildInstagramCaption(description, settings.websiteUrl),
+      caption: buildInstagramCaption(content.prompt.description, settings.websiteUrl),
       comment: {
-        hashtags: buildHashtagComment(selectedPrompt.title, selectedPrompt.tags),
+        hashtags: buildHashtagComment(content.prompt.title, content.prompt.tags),
       },
     },
     publish: {
@@ -105,6 +130,6 @@ export async function runPipeline(publish: boolean): Promise<InstagramDraft> {
     };
   }
 
-  await writeDraftJson(dateKey, draft);
+  await writeDraftJson(content.date, draft);
   return draft;
 }

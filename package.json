@@ -10,6 +10,11 @@
     "publish": "tsx src/cli.ts publish",
     "publish:scheduled": "tsx src/cli.ts publish:scheduled",
     "instagram:validate": "tsx src/cli.ts instagram:validate",
+    "twitter:authorize": "tsx src/cli.ts twitter:authorize",
+    "twitter:validate": "tsx src/cli.ts twitter:validate",
+    "generate:twitter": "tsx src/cli.ts generate:twitter",
+    "publish:twitter": "tsx src/cli.ts publish:twitter",
+    "publish:scheduled:twitter": "tsx src/cli.ts publish:scheduled:twitter",
     "test": "vitest run"
   },
   "dependencies": {

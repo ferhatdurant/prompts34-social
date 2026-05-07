@@ -1,10 +1,11 @@
 import { settings } from './config.js';
 import { runPipeline } from './pipeline.js';
+import { runTwitterPipeline } from './twitter-pipeline.js';
 import {
   hasScheduledPublishMarker,
   writeScheduledPublishMarker,
 } from './storage.js';
-import type { InstagramDraft } from './types.js';
+import type { InstagramDraft, TwitterDraft } from './types.js';
 
 const TURKEY_TIMEZONE = 'Europe/Istanbul';
 
@@ -51,38 +52,66 @@ export interface ScheduledPublishResult {
   draft?: InstagramDraft;
 }
 
+export interface ScheduledTwitterPublishResult {
+  skipped: boolean;
+  reason?: 'outside_window' | 'already_published_today';
+  dateKey: string;
+  draft?: TwitterDraft;
+}
+
 export async function runScheduledPublish(
   now = new Date(),
 ): Promise<ScheduledPublishResult> {
   const dateKey = getTurkeyDateKey(now);
 
   if (!isWithinTurkeyScheduleWindow(now)) {
-    return {
-      skipped: true,
-      reason: 'outside_window',
-      dateKey,
-    };
+    return { skipped: true, reason: 'outside_window', dateKey };
   }
 
-  if (await hasScheduledPublishMarker(dateKey)) {
-    return {
-      skipped: true,
-      reason: 'already_published_today',
-      dateKey,
-    };
+  if (await hasScheduledPublishMarker(dateKey, 'instagram')) {
+    return { skipped: true, reason: 'already_published_today', dateKey };
   }
 
   const draft = await runPipeline(true);
-  await writeScheduledPublishMarker(dateKey, {
+  await writeScheduledPublishMarker(
     dateKey,
-    mediaId: draft.publish.mediaId ?? null,
-    promptId: draft.prompt.id,
-    publishedAt: now.toISOString(),
-  });
+    {
+      dateKey,
+      mediaId: draft.publish.mediaId ?? null,
+      promptId: draft.prompt.id,
+      publishedAt: now.toISOString(),
+    },
+    'instagram',
+  );
 
-  return {
-    skipped: false,
+  return { skipped: false, dateKey, draft };
+}
+
+export async function runScheduledTwitterPublish(
+  now = new Date(),
+): Promise<ScheduledTwitterPublishResult> {
+  const dateKey = getTurkeyDateKey(now);
+
+  if (!isWithinTurkeyScheduleWindow(now)) {
+    return { skipped: true, reason: 'outside_window', dateKey };
+  }
+
+  if (await hasScheduledPublishMarker(dateKey, 'twitter')) {
+    return { skipped: true, reason: 'already_published_today', dateKey };
+  }
+
+  const draft = await runTwitterPipeline(true);
+  await writeScheduledPublishMarker(
     dateKey,
-    draft,
-  };
+    {
+      dateKey,
+      tweetId: draft.publish.tweetId ?? null,
+      replyTweetId: draft.twitter.reply.replyTweetId ?? null,
+      promptId: draft.prompt.id,
+      publishedAt: now.toISOString(),
+    },
+    'twitter',
+  );
+
+  return { skipped: false, dateKey, draft };
 }

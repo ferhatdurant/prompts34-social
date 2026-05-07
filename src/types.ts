@@ -17,17 +17,32 @@ export type ScheduleCategory =
   | 'business_email'
   | 'fun_creative';
 
+export interface PromptSelection {
+  id: string;
+  title: string;
+  description: string;
+  tags: string[];
+  permalink: string;
+}
+
+export interface DailyContent {
+  date: string;
+  category?: ScheduleCategory;
+  prompt: PromptSelection;
+  image: {
+    localPath: string;
+    publicUrl: string;
+    bytes: Buffer;
+    mimeType: string;
+    geminiPrompt: string;
+  };
+}
+
 export interface InstagramDraft {
   date: string;
   headline: string;
   category?: ScheduleCategory;
-  prompt: {
-    id: string;
-    title: string;
-    description: string;
-    tags: string[];
-    permalink: string;
-  };
+  prompt: PromptSelection;
   image: {
     localPath: string;
     publicUrl: string;
@@ -46,4 +61,35 @@ export interface InstagramDraft {
     mediaId?: string;
     published: boolean;
   };
+}
+
+export interface TwitterDraft {
+  date: string;
+  headline: string;
+  category?: ScheduleCategory;
+  prompt: PromptSelection;
+  image: {
+    localPath: string;
+    publicUrl: string;
+    mimeType: string;
+    geminiPrompt: string;
+  };
+  twitter: {
+    text: string;
+    reply: {
+      hashtags: string;
+      replyTweetId?: string;
+    };
+  };
+  publish: {
+    mediaId?: string;
+    tweetId?: string;
+    published: boolean;
+  };
+}
+
+export interface TwitterTokenRecord {
+  refreshToken: string;
+  scope: string;
+  updatedAt: string;
 }
