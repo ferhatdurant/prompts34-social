@@ -20,9 +20,24 @@ const envSchema = z.object({
   SCHEDULE_DEDUPE_WINDOW: z.coerce.number().int().positive().default(14),
   SCHEDULE_TARGET_HOUR_TR: z.coerce.number().int().min(0).max(23).default(12),
   SCHEDULE_TARGET_MINUTE_TR: z.coerce.number().int().min(0).max(59).default(30),
+  X_CLIENT_ID: z.string().min(1).optional(),
+  X_CLIENT_SECRET: z.string().min(1).optional(),
+  X_REDIRECT_URI: z.string().url().default('http://localhost:8765/callback'),
+  X_API_BASE: z.string().url().default('https://api.x.com'),
+  X_AUTHORIZE_BASE: z.string().url().default('https://x.com/i/oauth2/authorize'),
+  X_TOKEN_BUCKET: z.string().min(1).default('social-tokens'),
+  IMAGE_PROVIDER: z.enum(['gemini', 'openai']).default('gemini'),
+  OPENAI_API_KEY: z.string().min(1).optional(),
+  OPENAI_IMAGE_MODEL: z.string().min(1).default('gpt-image-1'),
 });
 
-const parsed = envSchema.parse(process.env);
+const cleanedEnv = Object.fromEntries(
+  Object.entries(process.env).map(([key, value]) => [
+    key,
+    value === '' ? undefined : value,
+  ]),
+);
+const parsed = envSchema.parse(cleanedEnv);
 
 export const settings = {
   promptsApiUrl: parsed.PROMPTS34_API_URL,
@@ -39,12 +54,25 @@ export const settings = {
   scheduleDedupeWindow: parsed.SCHEDULE_DEDUPE_WINDOW,
   scheduleTargetHourTr: parsed.SCHEDULE_TARGET_HOUR_TR,
   scheduleTargetMinuteTr: parsed.SCHEDULE_TARGET_MINUTE_TR,
+  xClientId: parsed.X_CLIENT_ID,
+  xClientSecret: parsed.X_CLIENT_SECRET,
+  xRedirectUri: parsed.X_REDIRECT_URI,
+  xApiBase: parsed.X_API_BASE.replace(/\/$/, ''),
+  xAuthorizeBase: parsed.X_AUTHORIZE_BASE,
+  xTokenBucket: parsed.X_TOKEN_BUCKET,
+  imageProvider: parsed.IMAGE_PROVIDER,
+  openaiApiKey: parsed.OPENAI_API_KEY,
+  openaiImageModel: parsed.OPENAI_IMAGE_MODEL,
   outputRoot: 'output',
 };
 
 export function requireGenerationConfig(): void {
-  if (!settings.geminiApiKey) {
-    throw new Error('Missing GEMINI_API_KEY');
+  if (settings.imageProvider === 'openai') {
+    if (!settings.openaiApiKey) {
+      throw new Error('Missing OPENAI_API_KEY (IMAGE_PROVIDER=openai)');
+    }
+  } else if (!settings.geminiApiKey) {
+    throw new Error('Missing GEMINI_API_KEY (IMAGE_PROVIDER=gemini)');
   }
   if (!settings.supabaseUrl || !settings.supabaseServiceRoleKey) {
     throw new Error(
@@ -60,4 +88,20 @@ export function requirePublishConfig(): void {
       'Missing INSTAGRAM_ACCESS_TOKEN or INSTAGRAM_IG_USER_ID for Instagram publishing',
     );
   }
+}
+
+export function requireTwitterConfig(): void {
+  if (!settings.supabaseUrl || !settings.supabaseServiceRoleKey) {
+    throw new Error(
+      'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY for Twitter token storage',
+    );
+  }
+  if (!settings.xClientId || !settings.xClientSecret) {
+    throw new Error('Missing X_CLIENT_ID or X_CLIENT_SECRET for Twitter publishing');
+  }
+}
+
+export function requireTwitterPublishConfig(): void {
+  requireGenerationConfig();
+  requireTwitterConfig();
 }
