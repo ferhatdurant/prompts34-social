@@ -26,6 +26,9 @@ const envSchema = z.object({
   X_API_BASE: z.string().url().default('https://api.x.com'),
   X_AUTHORIZE_BASE: z.string().url().default('https://x.com/i/oauth2/authorize'),
   X_TOKEN_BUCKET: z.string().min(1).default('social-tokens'),
+  IMAGE_PROVIDER: z.enum(['gemini', 'openai']).default('gemini'),
+  OPENAI_API_KEY: z.string().min(1).optional(),
+  OPENAI_IMAGE_MODEL: z.string().min(1).default('gpt-image-1'),
 });
 
 const cleanedEnv = Object.fromEntries(
@@ -57,12 +60,19 @@ export const settings = {
   xApiBase: parsed.X_API_BASE.replace(/\/$/, ''),
   xAuthorizeBase: parsed.X_AUTHORIZE_BASE,
   xTokenBucket: parsed.X_TOKEN_BUCKET,
+  imageProvider: parsed.IMAGE_PROVIDER,
+  openaiApiKey: parsed.OPENAI_API_KEY,
+  openaiImageModel: parsed.OPENAI_IMAGE_MODEL,
   outputRoot: 'output',
 };
 
 export function requireGenerationConfig(): void {
-  if (!settings.geminiApiKey) {
-    throw new Error('Missing GEMINI_API_KEY');
+  if (settings.imageProvider === 'openai') {
+    if (!settings.openaiApiKey) {
+      throw new Error('Missing OPENAI_API_KEY (IMAGE_PROVIDER=openai)');
+    }
+  } else if (!settings.geminiApiKey) {
+    throw new Error('Missing GEMINI_API_KEY (IMAGE_PROVIDER=gemini)');
   }
   if (!settings.supabaseUrl || !settings.supabaseServiceRoleKey) {
     throw new Error(

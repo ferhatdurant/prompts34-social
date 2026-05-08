@@ -1,19 +1,27 @@
-import { settings } from './config.js';
 import { writeTwitterDraftJson } from './json-output.js';
 import { prepareDailyContent } from './pipeline.js';
-import { buildTwitterHashtagReply, buildTwitterText } from './prompt-of-day.js';
+import {
+  buildHashtagReply,
+  buildPromptTweet,
+  buildTwitterDestinationUrl,
+} from './twitter-text.js';
 import { createTweet, uploadMedia } from './twitter.js';
 import type { TwitterDraft } from './types.js';
 
 export async function runTwitterPipeline(publish: boolean): Promise<TwitterDraft> {
   const content = await prepareDailyContent(new Date());
 
-  const text = buildTwitterText(
-    content.prompt.title,
-    content.prompt.description,
-    settings.websiteUrl,
-  );
-  const hashtags = buildTwitterHashtagReply(content.prompt.title, content.prompt.tags);
+  const url = buildTwitterDestinationUrl(content.prompt.permalink);
+  const text = buildPromptTweet({
+    headline: 'Günün Promptu',
+    title: content.prompt.title,
+    description: content.prompt.description,
+    url,
+  });
+  const hashtags = buildHashtagReply({
+    title: content.prompt.title,
+    tags: content.prompt.tags,
+  });
 
   const draft: TwitterDraft = {
     date: content.date,

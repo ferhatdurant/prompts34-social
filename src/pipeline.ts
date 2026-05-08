@@ -3,6 +3,7 @@ import path from 'node:path';
 import { settings } from './config.js';
 import { composeInstagramPoster } from './compositor.js';
 import { generateInstagramImage } from './gemini.js';
+import { generateInstagramImageOpenAI } from './openai.js';
 import { getRecentlyPublishedPromptIds } from './history.js';
 import {
   createImageContainer,
@@ -54,7 +55,10 @@ export async function prepareDailyContent(now: Date = new Date()): Promise<Daily
   const geminiPrompt = buildGeminiImagePrompt(selectedPrompt.title);
   let composedImage = await readExistingPosterBytes(dateKey);
   if (!composedImage) {
-    const generatedImage = await generateInstagramImage(geminiPrompt);
+    const generatedImage =
+      settings.imageProvider === 'openai'
+        ? await generateInstagramImageOpenAI(geminiPrompt)
+        : await generateInstagramImage(geminiPrompt);
     composedImage = await composeInstagramPoster(
       generatedImage.bytes,
       selectedPrompt.title,
